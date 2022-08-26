@@ -9,6 +9,13 @@ The package itself does not need any external packages, you only need packages w
 - Advanced error logging
 
 ## Documentation
+### Create a database
+Create a JSON File with an empty object
+```
+js
+{}
+```
+
 ### Setup
 ```js
 const express = require("express"); // this package is express server based
@@ -19,6 +26,7 @@ const urlShortener = require('./urlShortener.js')
 app.set('trust proxy', true); // required if you enabled "logClicks"
 app.use(bodyParser.json()); // required for post requests
 ```
+
 ### Configuration
 ```js
 urlShortener.configURL({
