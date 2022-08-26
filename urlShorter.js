@@ -1,6 +1,5 @@
 const fs = require('fs');
 const crypto = require('crypto');
-const { nanoid } = require('nanoid');
 
 function configURL(options) {
   return new Promise(function (resolve, reject) {
@@ -12,16 +11,55 @@ function configURL(options) {
   });
 }
 
+function device(request) {
+  return new Promise(function (resolve, reject) {
+    var useragent = request.headers['user-agent'];
+    if (!useragent || useragent === "") {
+      if (request.headers['cloudfront-is-mobile-viewer'] === 'true') return resolve({ action: "device", device: "Phone" });
+      if (request.headers['cloudfront-is-tablet-viewer'] === 'true') return resolve({ action: "device", device: "Tablet" });
+      if (request.headers['cloudfront-is-desktop-viewer'] === 'true') return resolve({ action: "device", device: "Desktop" });
+      return resolve({ action: "device", device: "Unavailable" });
+    } else {
+      if (useragent.match(/iP(a|ro)d/i) || (useragent.match(/tablet/i) && !useragent.match(/RX-34/i)) || useragent.match(/FOLIO/i)) {
+        return resolve({ action: "device", device: "Tablet" });
+      } else if (useragent.match(/Linux/i) && useragent.match(/Android/i) && !useragent.match(/Fennec|mobi|HTC Magic|HTCX06HT|Nexus One|SC-02B|fone 945/i)) {
+        return resolve({ action: "device", device: "Android Tablet" });
+      } else if (useragent.match(/Kindle/i) || (useragent.match(/Mac OS/i) && useragent.match(/Silk/i)) || (useragent.match(/AppleWebKit/i) && useragent.match(/Silk/i) && !useragent.match(/Playstation Vita/i))) {
+        return resolve({ action: "device", device: "Kindle Tablet" });
+      } else if (useragent.match(/GT-P10|SC-01C|SHW-M180S|SGH-T849|SCH-I800|SHW-M180L|SPH-P100|SGH-I987|zt180|HTC( Flyer|_Flyer)|Sprint ATP51|ViewPad7|pandigital(sprnova|nova)|Ideos S7|Dell Streak 7|Advent Vega|A101IT|A70BHT|MID7015|Next2|nook/i) || (useragent.match(/MB511/i) && useragent.match(/RUTEM/i))) {
+        return resolve({ action: "device", device: "Android Tablet" });
+      } else if (useragent.match(/BOLT|Fennec|Iris|Maemo|Minimo|Mobi|mowser|NetFront|Novarra|Prism|RX-34|Skyfire|Tear|XV6875|XV6975|Google Wireless Transcoder/i) && !useragent.match(/AdsBot-Google-Mobile/i)) {
+        return resolve({ action: "device", device: "Phone" });
+      } else if (useragent.match(/Opera/i) && ua.match(/Windows NT 5/i) && ua.match(/HTC|Xda|Mini|Vario|SAMSUNG\-GT\-i8000|SAMSUNG\-SGH\-i9/i)) {
+        return resolve({ action: "device", device: "Opera Phone" });
+      } else if ((useragent.match(/Windows( )?(NT|XP|ME|9)/) && !useragent.match(/Phone/i)) && !useragent.match(/Bot|Spider|ia_archiver|NewsGator/i) || useragent.match(/Win( ?9|NT)/i) || useragent.match(/Go-http-client/i)) {
+        return resolve({ action: "device", device: "Windows Desktop" });
+      } else if (useragent.match(/Macintosh|PowerPC/i) && !useragent.match(/Silk|moatbot/i)) {
+        return resolve({ action: "device", device: "Mac Desktop" });
+      } else if (useragent.match(/Linux/i) && useragent.match(/X11/i) && !useragent.match(/Charlotte|JobBot/i)) {
+        return resolve({ action: "device", device: "Linux Desktop" });
+      } else if (useragent.match(/CrOS/)) {
+        return resolve({ action: "device", device: "Chromebook" });
+      } else if (useragent.match(/Solaris|SunOS|BSD/i)) {
+        return resolve({ action: "device", device: "Solaris, SunOS, BSD Desktop" });
+      } else {
+        return resolve({ action: "device", device: "Unavailable" });
+      }
+    }
+  });
+}
+
 function clickURL(request) {
   return new Promise(function (resolve, reject) {
     if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "click", err: "No options were given" });
     if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "click", err: "No file was given" });
-    if (!Object.keys(request).includes("device") || !request.device) return resolve({ action: "click", err: "Package Express Device not found" });
-    if (!Object.keys(request).includes("ip") || !request.ip) return resolve({ action: "click", err: "Enable trust proxy" });
-    var buffer = JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"));
-    buffer[request?.params?.id].clicks.push({ date: Date.now(), device: request?.device.type, ip: request.ip });
-    fs.writeFileSync("./urls.json", JSON.stringify(buffer), "utf8");
-    return resolve({ action: "click", device: request.device.type, ip: request.ip });
+    if (!request?.ip) return resolve({ action: "click", err: "Enable trust proxy" });
+    device(request).then((result) => {
+      var buffer = JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"));
+      buffer[request.params.id].clicks.push({ date: Date.now(), device: result.device, ip: request.ip });
+      fs.writeFileSync(module.exports.options.file, JSON.stringify(buffer), "utf8");
+      return resolve({ action: "click", device: result.device, ip: request.ip });
+    });
   });
 }
 
@@ -42,8 +80,8 @@ function openURL(request, result) {
         if (result.err) {
           return resolve(result);
         }
+        return resolve({ action: "open", url: JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url });
       });
-      return resolve({ action: "open", url: JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url });
     } else {
       return resolve({ action: "open", err: "Id does not exist" });
     }
@@ -58,34 +96,37 @@ function createURL(body) {
     if (!Object.keys(body).includes("url") || !body.url) return resolve({ action: "create", err: "No url was given" });
     if (Object.keys(body).includes("id") && body.id) {
       if (Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(body.id)) return resolve({ action: "create", err: "Id already exists" });
-      var token = nanoid();
-      fs.writeFileSync(module.exports.options.file, JSON.stringify({
-        ...JSON.parse(fs.readFileSync(module.exports.options.file, "utf8")),
-        ...{
-          [body.id]: {
-            token: token,
-            url: body.url,
-            clicks: []
-          }
-        }
-      }), 'utf8');
-      return resolve({ action: "create", id: body.id, url: body.url, token, disclaimer: "The token you got is used to edit or delete the url from the database" });
-    } else {
-      crypto.randomBytes(4, function (err, resp) {
-        var id = resp.toString('hex');
-        var token = nanoid();
+      crypto.randomBytes(10, function (err, token) {
         if (err) return resolve({ err: err.message });
         fs.writeFileSync(module.exports.options.file, JSON.stringify({
           ...JSON.parse(fs.readFileSync(module.exports.options.file, "utf8")),
           ...{
-            [id]: {
-              token: token,
+            [body.id]: {
+              token: token.toString('hex'),
               url: body.url,
               clicks: []
             }
           }
         }), 'utf8');
-        return resolve({ action: "create", id, url: body.url, token, disclaimer: "The token you got is used to edit or delete the url from the database" });
+        return resolve({ action: "create", id: body.id, url: body.url, token: token.toString('hex'), disclaimer: "The token you got is used to edit or delete the url from the database" });
+      });
+    } else {
+      crypto.randomBytes(4, function (err, id) {
+        if (err) return resolve({ err: err.message });
+        crypto.randomBytes(10, function (err, token) {
+          if (err) return resolve({ err: err.message });
+          fs.writeFileSync(module.exports.options.file, JSON.stringify({
+            ...JSON.parse(fs.readFileSync(module.exports.options.file, "utf8")),
+            ...{
+              [id.toString('hex')]: {
+                token: token.toString('hex'),
+                url: body.url,
+                clicks: []
+              }
+            }
+          }), 'utf8');
+          return resolve({ action: "create", id: id.toString('hex'), url: body.url, token: token.toString('hex'), disclaimer: "The token you got is used to edit or delete the url from the database" });
+        });
       });
     }
   });
