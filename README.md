@@ -6,12 +6,10 @@ The package itself does not need any external packages, you only need packages w
 
 ## Documentation
 ### Setup
-```
-js
+```js
 const urlShortener = require('')
 ```
 ### Configuration
-```
-js
+```js
 const 
 ```
