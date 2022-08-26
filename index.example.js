@@ -1,7 +1,6 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-const device = require('express-device');
 const urlShorter = require('./urlShorter.js');
 
 urlShorter.configURL({
@@ -12,7 +11,6 @@ urlShorter.configURL({
 });
 
 app.use(bodyParser.json());
-app.use(device.capture());
 
 app.all("/url/:id", (req, res) => {
   urlShorter.openURL(req, res).then((result) => {});
