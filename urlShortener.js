@@ -76,12 +76,16 @@ function openURL(request, result) {
       } catch (err) {
         return resolve({ action: "open", err: err.message });
       }
-      clickURL(request).then((result) => {
-        if (result.err) {
-          return resolve(result);
-        }
+      if (module.exports.options.logClicks === true) {
+        clickURL(request).then((result) => {
+          if (result.err) {
+            return resolve(result);
+          }
+          return resolve({ action: "open", url: JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url });
+        });
+      } else {
         return resolve({ action: "open", url: JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url });
-      });
+      }
     } else {
       return resolve({ action: "open", err: "Id does not exist" });
     }
