@@ -11,8 +11,7 @@ The package itself does not need any external packages, you only need packages w
 ## Documentation
 ### Create a database
 Create a JSON File with an empty object
-```
-js
+```json
 {}
 ```
 
