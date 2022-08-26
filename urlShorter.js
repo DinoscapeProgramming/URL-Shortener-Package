@@ -12,21 +12,38 @@ function configURL(options) {
   });
 }
 
-function click(request) {
-  var buffer = JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"));
-  buffer[request.params.id].clicks.push({ date: Date.now(), device: request.device.type, ip: request.ip });
-  fs.writeFileSync("./urls.json", JSON.stringify(buffer), "utf8");
+function clickURL(request) {
+  return new Promise(function (resolve, reject) {
+    if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "click", err: "No options were given" });
+    if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "click", err: "No file was given" });
+    if (!Object.keys(request).includes("device") || !request.device) return resolve({ action: "click", err: "Package Express Device not found" });
+    if (!Object.keys(request).includes("ip") || !request.ip) return resolve({ action: "click", err: "Enable trust proxy" });
+    var buffer = JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"));
+    buffer[request?.params?.id].clicks.push({ date: Date.now(), device: request?.device.type, ip: request.ip });
+    fs.writeFileSync("./urls.json", JSON.stringify(buffer), "utf8");
+    return resolve({ action: "click", device: request.device.type, ip: request.ip });
+  });
 }
 
 function openURL(request, result) {
+  if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "open", err: "No options were given" });
+  if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "open", err: "No file was given" });
+  if (!Object.keys(module.exports.options).includes("parameter") || !module.exports.options.parameter) return resolve({ action: "open", err: "No parameter was given" });
   return new Promise(function (resolve, reject) {
-    if (Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(request.params.id)) {
+    if (!Object.keys(request).includes("params") || !request.params) return resolve({ action: "open", err: "No parameters were given" });
+    if (!Object.keys(request.params).includes(module.exports.options.parameter) || !request.params[module.exports.options.parameter]) return resolve({ action: "open", err: "No parameter was given" });
+    if (Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(request.params[module.exports.options.parameter])) {
       try {
-        result.redirect(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params.id].url);
+        result.redirect(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url);
       } catch (err) {
         return resolve({ action: "open", err: err.message });
       }
-      click(request);
+      clickURL(request).then((result) => {
+        if (result.err) {
+          return resolve(result);
+        }
+      });
+      return resolve({ action: "open", url: JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url });
     } else {
       return resolve({ action: "open", err: "Id does not exist" });
     }
@@ -35,6 +52,8 @@ function openURL(request, result) {
 
 function createURL(body) {
   return new Promise(function (resolve, reject) {
+    if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "create", err: "No options were given" });
+    if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "create", err: "No file was given" });
     if (!body || Object.keys(body).length === 0) return resolve({ action: "create", err: "No body was given" });
     if (!Object.keys(body).includes("url") || !body.url) return resolve({ action: "create", err: "No url was given" });
     if (Object.keys(body).includes("id") && body.id) {
@@ -74,6 +93,8 @@ function createURL(body) {
 
 function editURL(body) {
   return new Promise(function (resolve, reject) {
+    if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "edit", err: "No options were given" });
+    if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "edit", err: "No file was given" });
     if (!body || Object.keys(body).length === 0) return resolve({ action: "edit", err: "No body was given" });
     if (!Object.keys(body).includes("id") || !body.id) return resolve({ action: "edit", err: "No id was given" });
     if (!Object.keys(body).includes("url") || !body.url) return resolve({ action: "edit", err: "No url was given" });
@@ -95,6 +116,8 @@ function editURL(body) {
 
 function deleteURL(body) {
   return new Promise(function (resolve, reject) {
+    if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "delete", err: "No options were given" });
+    if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "delete", err: "No file was given" });
     if (!body || Object.keys(body).length === 0) return resolve({ action: "delete", err: "No body was given" });
     if (!Object.keys(body).includes("id") || !body.id) return resolve({ action: "delete", err: "No id was given" });
     if (!Object.keys(body).includes("token") || !body.token) return resolve({ action: "delete", err: "No token was given" });
@@ -109,6 +132,8 @@ function deleteURL(body) {
 
 function getURL(body) {
   return new Promise(function (resolve, reject) {
+    if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "get", err: "No options were given" });
+    if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "get", err: "No file was given" });
     if (!body || Object.keys(body).length === 0) return resolve({ action: "get", err: "No body was given" });
     if (!Object.keys(body).includes("id") || !body.id) return resolve({ action: "get", err: "No id was given" });
     if (!Object.keys(body).includes("token") || !body.token) return resolve({ action: "get", err: "No token was given" });
