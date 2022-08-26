@@ -89,7 +89,8 @@ const urlShortener = require('./urlShortener.js');
 
 urlShortener.configURL({
   file: "./urls.json",
-  parameter: "id"
+  parameter: "id",
+  logClicks: true
 }).then((result) => {
   console.log("URL Shorter options were approved to the package");
 });
