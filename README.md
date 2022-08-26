@@ -49,7 +49,7 @@ app.all("/url/:id", (req, res) => {
 app.all("/api/v1/url/create", (req, res) => {
   urlShortener.createURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 ```
 
@@ -58,7 +58,7 @@ app.all("/api/v1/url/create", (req, res) => {
 app.all("/api/v1/url/edit", (req, res) => {
   urlShortener.editURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 ```
 
@@ -67,7 +67,7 @@ app.all("/api/v1/url/edit", (req, res) => {
 app.all("/api/v1/url/delete", (req, res) => {
   urlShortener.deleteURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 ```
 
@@ -76,7 +76,7 @@ app.all("/api/v1/url/delete", (req, res) => {
 app.all("/api/v1/url/get", (req, res) => {
   urlShortener.getURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 ```
 
@@ -111,25 +111,25 @@ app.all("/url/:id", (req, res) => {
 app.all("/api/v1/url/create", (req, res) => {
   urlShortener.createURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 
 app.all("/api/v1/url/edit", (req, res) => {
   urlShortener.editURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 
 app.all("/api/v1/url/delete", (req, res) => {
   urlShortener.deleteURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 
 app.all("/api/v1/url/get", (req, res) => {
   urlShortener.getURL(req.body).then((result) => {
     res.json(result);
-  })
+  });
 });
 
 const listen = app.listen(3000, () => {
