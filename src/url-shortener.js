@@ -199,7 +199,43 @@ function getURL(body) {
   });
 }
 
+function shortener(options) {
+  configURL(options).then((result) => {
+    if (result.err) throw new Error(result.err);
+    return function (req, res, next) {
+      req.openURL = function () {
+        openURL(req, res).then((result) => {
+          if (result.err) {
+            return res.json(result);
+          }
+        });
+      }
+      req.createURL = function () {
+        createURL(req.body).then((result) => {
+          return res.json(result);
+        });
+      }
+      req.editURL = function () {
+        editURL(req.body).then((result) => {
+          return res.json(result);
+        });
+      }
+      req.deleteURL = function () {
+        deleteURL(req.body).then((result) => {
+          return res.json(result);
+        });
+      }
+      req.getURL = function () {
+        getURL(req.body).then((result) => {
+          return res.json(result);
+        });
+      }
+    }
+  });
+}
+
 module.exports = {
+  shortener,
   configURL,
   openURL,
   createURL,
