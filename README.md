@@ -145,3 +145,27 @@ const listen = app.listen(3000, () => {
   console.log("Server is ready on port", listen.address().port);
 });
 ```
+
+## Error Handling
+### Invalid options
+The options you have given or not defined or not an object
+
+### No options were given
+You have not executed the ConfigURL method before executing this method
+
+### No file was given
+Your options do not contain a file
+
+### Enable Trust Proxy
+You set logClicks in the options to true but you have not enabled trust proxy
+```js
+app.set('trust proxy', true);
+```
+
+### No parameter was given
+Your options do not contain a but you have executed the openURL function so the package does not know what id it should open
+
+### Id does not exist
+The given id is not available in the database
+
+###
