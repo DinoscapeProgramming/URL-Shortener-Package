@@ -1,6 +1,15 @@
 const fs = require('fs');
 const crypto = require('crypto');
 
+function isURL(url) {
+  try {
+    new URL(url)
+  } catch (err) {
+    return false;
+  }
+  return true;
+}
+
 function configURL(options) {
   return new Promise(function (resolve, reject) {
     if (!options || typeof options !== "object") return resolve({ action: "config", err: "No options were given" });
@@ -98,6 +107,7 @@ function createURL(body) {
     if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "create", err: "No file was given" });
     if (!body || Object.keys(body).length === 0) return resolve({ action: "create", err: "No body was given" });
     if (!Object.keys(body).includes("url") || !body.url) return resolve({ action: "create", err: "No url was given" });
+    if (!isURL(body.url)) return resolve({ action: "create", err: "Invalid url" });
     if (Object.keys(body).includes("id") && body.id) {
       if (Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(body.id)) return resolve({ action: "create", err: "Id already exists" });
       crypto.randomBytes(10, function (err, token) {
@@ -146,6 +156,7 @@ function editURL(body) {
     if (!Object.keys(body).includes("token") || !body.token) return resolve({ action: "edit", err: "No token was given" });
     if (!Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(body.id)) return resolve({ action: "edit", err: "Id does not exists" });
     if (JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[body.id].token !== body.token) return resolve({ action: "edit", err: "Invalid token" });
+    if (!isURL(body.url)) return resolve({ action: "create", err: "Invalid url" });
     fs.writeFileSync(module.exports.options.file, JSON.stringify({
       ...JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8')),
       ...{
