@@ -186,8 +186,8 @@ The id item does not exist in the body
 ### No token was given
 The token item does not exist in the body
 
-## Invalid token
+### Invalid token
 The token is not valid
 
-## Other Errors
+### Other Errors
 Other errors are from the node internal packages fs and crypto (mostly fs when you enter a not existing file)
