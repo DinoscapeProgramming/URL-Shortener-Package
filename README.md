@@ -175,7 +175,7 @@ The body item was not given in the function
 The url item does not exist in the body
 
 ### Invalid url
-The url is not a valid url
+The url is not a valid
 
 ### Id already exists
 The custom id already exists in the database
@@ -185,3 +185,9 @@ The id item does not exist in the body
 
 ### No token was given
 The token item does not exist in the body
+
+## Invalid token
+The token is not valid
+
+## Other Errors
+Other errors are from the node internal packages fs and crypto (mostly fs when you enter a not existing file)
