@@ -11,7 +11,12 @@ urlShorter.configURL({
   console.log("URL Shorter options were approved to the package");
 });
 
+app.set('trust proxy', true);
 app.use(bodyParser.json());
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'Dinoscape');
+  next();
+});
 
 app.all("/url/:id", (req, res) => {
   urlShorter.openURL(req, res).then((result) => {});
