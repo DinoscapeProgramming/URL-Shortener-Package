@@ -20,7 +20,7 @@ Create a JSON File with an empty object
 const express = require("express"); // this package is express server based
 const app = express();
 const bodyParser = require("body-parser");
-const urlShortener = require('./urlShortener.js')
+const urlShortener = require('express-shortener');
 
 app.set('trust proxy', true); // required if you enabled "logClicks"
 app.use(bodyParser.json()); // required for post requests
