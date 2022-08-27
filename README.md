@@ -24,6 +24,10 @@ const urlShortener = require('./urlShortener.js')
 
 app.set('trust proxy', true); // required if you enabled "logClicks"
 app.use(bodyParser.json()); // required for post requests
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'Dinoscape');
+  next();
+});
 ```
 
 ### Configuration
@@ -102,7 +106,12 @@ urlShortener.configURL({
   console.log("URL Shorter options were approved to the package");
 });
 
+app.set('trust proxy', true);
 app.use(bodyParser.json());
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'Dinoscape');
+  next();
+});
 
 app.all("/url/:id", (req, res) => {
   urlShortener.openURL(req, res).then((result) => {});
