@@ -168,4 +168,20 @@ Your options do not contain a but you have executed the openURL function so the 
 ### Id does not exist
 The given id is not available in the database
 
-###
+### No body was given
+The body item was not given in the function
+
+### No url was given
+The url item does not exist in the body
+
+### Invalid url
+The url is not a valid url
+
+### Id already exists
+The custom id already exists in the database
+
+### No id was given
+The id item does not exist in the body
+
+### No token was given
+The token item does not exist in the body
