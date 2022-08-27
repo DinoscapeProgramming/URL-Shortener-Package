@@ -230,6 +230,7 @@ function shortener(options) {
           return res.json(result);
         });
       }
+      next();
     }
   });
 }
