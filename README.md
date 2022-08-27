@@ -190,4 +190,4 @@ The token item does not exist in the body
 The token is not valid
 
 ### Other Errors
-Other errors are from the node internal packages fs and crypto (mostly fs when you enter a not existing file)
+Other errors are from the node internal packages fs and crypto (mostly fs when you enter a not existing file or the content in the file is not an object)
