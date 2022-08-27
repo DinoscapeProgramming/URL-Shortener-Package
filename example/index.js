@@ -8,7 +8,7 @@ urlShortener.configURL({
   parameter: "id",
   logClicks: true
 }).then((result) => {
-  console.log("URL Shorter options were approved to the package");
+  console.log("URL Shortener options were approved to the package");
 });
 
 app.set('trust proxy', true);
