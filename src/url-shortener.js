@@ -1,5 +1,14 @@
 const fs = require('fs');
 const crypto = require('crypto');
+const { config } = require('process');
+
+function readFileSync() {
+  try {
+    return JSON.parse(require('fs').readFileSync(module.exports.options.file, 'utf8'));
+  } catch (err) {
+    return { action: "read", err: err.message }
+  }
+}
 
 function isURL(url) {
   try {
@@ -12,12 +21,20 @@ function isURL(url) {
 
 function configURL(options) {
   return new Promise(function (resolve, reject) {
-    if (!options || typeof options !== "object") return resolve({ action: "config", err: "No options were given" });
+    if (!options || typeof options !== "object") return resolve({ action: "config", err: "Invalid options" });
     module.exports = {
       options
     }
     return resolve({ action: "config", options });
   });
+}
+
+function configURLSync(options) {
+  if (!options || typeof options !== "object") return { action: "config", err: "Invalid options" };
+  module.exports = {
+    options
+  }
+  return { action: "config", options };
 }
 
 function device(request) {
@@ -64,39 +81,38 @@ function clickURL(request) {
     if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "click", err: "No file was given" });
     if (!request?.ip) return resolve({ action: "click", err: "Enable trust proxy" });
     device(request).then((result) => {
-      var buffer = JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"));
+      var buffer = readFileSync();
       buffer[request.params.id].clicks.push({ date: Date.now(), device: result.device, ip: request.ip });
-      fs.writeFileSync(module.exports.options.file, JSON.stringify(buffer), "utf8");
-      return resolve({ action: "click", device: result.device, ip: request.ip });
+      require('fs').writeFile(module.exports.options.file, JSON.stringify(buffer), "utf8", function (err) {
+        if (err) return resolve({ action: "click", err: err.message });
+        return resolve({ action: "click", device: result.device, ip: request.ip });
+      });
     });
   });
 }
 
 function openURL(request, result) {
-  if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "open", err: "No options were given" });
-  if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "open", err: "No file was given" });
-  if (!Object.keys(module.exports.options).includes("parameter") || !module.exports.options.parameter) return resolve({ action: "open", err: "No parameter was given" });
   return new Promise(function (resolve, reject) {
-    if (!Object.keys(request).includes("params") || !request.params) return resolve({ action: "open", err: "No parameters were given" });
-    if (!Object.keys(request.params).includes(module.exports.options.parameter) || !request.params[module.exports.options.parameter]) return resolve({ action: "open", err: "No parameter was given" });
-    if (Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(request.params[module.exports.options.parameter])) {
-      try {
-        result.redirect(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url);
-      } catch (err) {
-        return resolve({ action: "open", err: err.message });
-      }
-      if (module.exports.options.logClicks === true) {
-        clickURL(request).then((result) => {
-          if (result.err) {
-            return resolve(result);
-          }
-          return resolve({ action: "open", url: JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url });
-        });
-      } else {
-        return resolve({ action: "open", url: JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[request.params[module.exports.options.parameter]].url });
-      }
+    if (!Object.keys(module.exports).includes("options") || !module.exports.options) return resolve({ action: "open", err: "No options were given" });
+    if (!Object.keys(module.exports.options).includes("file") || !module.exports.options.file) return resolve({ action: "open", err: "No file was given" });
+    if (!Object.keys(module.exports.options).includes("parameter") || !module.exports.options.parameter) return resolve({ action: "open", err: "No parameter was given" });
+    if (!request?.params) return resolve({ action: "open", err: "No parameters were given" });
+    if (!Object.keys(request.params).includes(module.exports.options.parameter) || !request.params[module.exports.options.parameter]) return resolve({ action: "open", err: "Invalid parameter" });
+    if (!Object.keys(readFileSync()).includes(request.params[module.exports.options.parameter])) return resolve({ action: "open", err: "Id does not exist" });
+    try {
+      result.redirect(readFileSync()[request.params[module.exports.options.parameter]].url);
+    } catch (err) {
+      return resolve({ action: "open", err: err.message });
+    }
+    if (module.exports.options.logClicks === true) {
+      clickURL(request).then((result) => {
+        if (result.err) {
+          return resolve(result);
+        }
+          return resolve({ action: "open", url: readFileSync()[request.params[module.exports.options.parameter]].url });
+      });
     } else {
-      return resolve({ action: "open", err: "Id does not exist" });
+      return resolve({ action: "open", url: readFileSync()[request.params[module.exports.options.parameter]].url });
     }
   });
 }
@@ -109,11 +125,11 @@ function createURL(body) {
     if (!Object.keys(body).includes("url") || !body.url) return resolve({ action: "create", err: "No url was given" });
     if (!isURL(body.url)) return resolve({ action: "create", err: "Invalid url" });
     if (Object.keys(body).includes("id") && body.id) {
-      if (Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(body.id)) return resolve({ action: "create", err: "Id already exists" });
+      if (Object.keys(readFileSync()).includes(body.id)) return resolve({ action: "create", err: "Id already exists" });
       crypto.randomBytes(10, function (err, token) {
-        if (err) return resolve({ err: err.message });
-        fs.writeFileSync(module.exports.options.file, JSON.stringify({
-          ...JSON.parse(fs.readFileSync(module.exports.options.file, "utf8")),
+        if (err) return resolve({ action: "create", err: err.message });
+        require('fs').writeFile(module.exports.options.file, JSON.stringify({
+          ...readFileSync(),
           ...{
             [body.id]: {
               token: token.toString('hex'),
@@ -121,16 +137,18 @@ function createURL(body) {
               clicks: []
             }
           }
-        }), 'utf8');
-        return resolve({ action: "create", id: body.id, url: body.url, token: token.toString('hex'), disclaimer: "The token you got is used to edit or delete the url from the database" });
+        }), 'utf8', function (err) {
+          if (err) return resolve({ action: "create", err: err.message });
+          return resolve({ action: "create", id: body.id, url: body.url, token: token.toString('hex'), disclaimer: "The token you got is used to edit or delete the url from the database" });
+        });
       });
     } else {
       crypto.randomBytes(4, function (err, id) {
-        if (err) return resolve({ err: err.message });
+        if (err) return resolve({ action: "create", err: err.message });
         crypto.randomBytes(10, function (err, token) {
-          if (err) return resolve({ err: err.message });
-          fs.writeFileSync(module.exports.options.file, JSON.stringify({
-            ...JSON.parse(fs.readFileSync(module.exports.options.file, "utf8")),
+          if (err) return resolve({ action: "create", err: err.message });
+          require('fs').writeFile(module.exports.options.file, JSON.stringify({
+            ...readFileSync(),
             ...{
               [id.toString('hex')]: {
                 token: token.toString('hex'),
@@ -138,8 +156,10 @@ function createURL(body) {
                 clicks: []
               }
             }
-          }), 'utf8');
-          return resolve({ action: "create", id: id.toString('hex'), url: body.url, token: token.toString('hex'), disclaimer: "The token you got is used to edit or delete the url from the database" });
+          }), 'utf8', function (err) {
+            if (err) return resolve({ action: "create", err: err.message });
+            return resolve({ action: "create", id: id.toString('hex'), url: body.url, token: token.toString('hex'), disclaimer: "The token you got is used to edit or delete the url from the database" });
+          });
         });
       });
     }
@@ -154,19 +174,21 @@ function editURL(body) {
     if (!Object.keys(body).includes("id") || !body.id) return resolve({ action: "edit", err: "No id was given" });
     if (!Object.keys(body).includes("url") || !body.url) return resolve({ action: "edit", err: "No url was given" });
     if (!Object.keys(body).includes("token") || !body.token) return resolve({ action: "edit", err: "No token was given" });
-    if (!Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))).includes(body.id)) return resolve({ action: "edit", err: "Id does not exists" });
-    if (JSON.parse(fs.readFileSync(module.exports.options.file, "utf8"))[body.id].token !== body.token) return resolve({ action: "edit", err: "Invalid token" });
+    if (!Object.keys(readFileSync()).includes(body.id)) return resolve({ action: "edit", err: "Id does not exist" });
+    if (readFileSync()[body.id].token !== body.token) return resolve({ action: "edit", err: "Invalid token" });
     if (!isURL(body.url)) return resolve({ action: "create", err: "Invalid url" });
-    fs.writeFileSync(module.exports.options.file, JSON.stringify({
-      ...JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8')),
+    require('fs').writeFile(module.exports.options.file, JSON.stringify({
+      ...readFileSync(),
       ...{
         [body.id]: {
           token: body.token,
           url: body.url
         }
       }
-    }), 'utf8');
-    return resolve({ action: "edit", id: body.id, url: body.url, token: body.token });
+    }), 'utf8', function (err) {
+      if (err) return resolve({ action: "edit", err: err.message });
+      return resolve({ action: "edit", id: body.id, url: body.url, token: body.token });
+    });
   });
 }
 
@@ -177,12 +199,14 @@ function deleteURL(body) {
     if (!body || Object.keys(body).length === 0) return resolve({ action: "delete", err: "No body was given" });
     if (!Object.keys(body).includes("id") || !body.id) return resolve({ action: "delete", err: "No id was given" });
     if (!Object.keys(body).includes("token") || !body.token) return resolve({ action: "delete", err: "No token was given" });
-    if (!Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8'))).includes(body.id)) return resolve({ action: "delete", err: "Id does not exists" });
-    if (JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8'))[body.id].token !== body.token) return resolve({ action: "delete", err: "Invalid token" });
-    var buffer = JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8'));
+    if (!Object.keys(readFileSync()).includes(body.id)) return resolve({ action: "delete", err: "Id does not exist" });
+    if (readFileSync()[body.id].token !== body.token) return resolve({ action: "delete", err: "Invalid token" });
+    var buffer = readFileSync();
     delete buffer[body.id];
-    fs.writeFileSync(module.exports.options.file, JSON.stringify(buffer), 'utf8');
-    return resolve({ action: "delete", id: body.id, token: body.token });
+    require('fs').writeFile(module.exports.options.file, JSON.stringify(buffer), 'utf8', function (err) {
+      if (err) return resolve({ action: "edit", err: err.message });
+      return resolve({ action: "delete", id: body.id, token: body.token });
+    });
   });
 }
 
@@ -193,52 +217,86 @@ function getURL(body) {
     if (!body || Object.keys(body).length === 0) return resolve({ action: "get", err: "No body was given" });
     if (!Object.keys(body).includes("id") || !body.id) return resolve({ action: "get", err: "No id was given" });
     if (!Object.keys(body).includes("token") || !body.token) return resolve({ action: "get", err: "No token was given" });
-    if (!Object.keys(JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8'))).includes(body.id)) return resolve({ action: "get", err: "Id does not exists" });
-    if (JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8'))[body.id].token !== body.token) return resolve({ action: "get", err: "Invalid token" });
-    return resolve({ action: "get", id: body.id, token: body.token, url: JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8'))[body.id].url, clicks: JSON.parse(fs.readFileSync(module.exports.options.file, 'utf8'))[body.id].clicks })
+    if (!Object.keys(readFileSync()).includes(body.id)) return resolve({ action: "get", err: "Id does not exist" });
+    if (readFileSync()[body.id].token !== body.token) return resolve({ action: "get", err: "Invalid token" });
+    return resolve({ action: "get", id: body.id, token: body.token, url: readFileSync()[body.id].url, clicks: readFileSync()[body.id].clicks })
   });
 }
 
-async function shortener(options) {
-  const result = await configURL(options);
+function shortener(options) {
+  const result = configURLSync(options);
   if (result.err) throw new Error(result.err);
   return function (req, res, next) {
-    req.openURL = function () {
+    res.openURL = function () {
       openURL(req, res).then((result) => {
         if (result.err) {
           return res.json(result);
         }
       });
-    }
-    req.createURL = function () {
+    };
+    res.createURL = function () {
       createURL(req.body).then((result) => {
         return res.json(result);
       });
     }
-    req.editURL = function () {
+    res.editURL = function () {
       editURL(req.body).then((result) => {
         return res.json(result);
       });
     }
-    req.deleteURL = function () {
+    res.deleteURL = function () {
       deleteURL(req.body).then((result) => {
         return res.json(result);
       });
     }
-    req.getURL = function () {
+    res.getURL = function () {
       getURL(req.body).then((result) => {
         return res.json(result);
       });
     }
     next();
+  };
+}
+
+class Shortener {
+  constructor(options) {
+    configURL(options).then((result) => {});
+  }
+  open(req, res) {
+    openURL(req, res).then((result) => {
+      if (result.err) return res.json(result);
+    });
+  }
+  create(req, res) {
+    createURL(req.body).then((result) => {
+      res.json(result);
+    });
+  }
+  edit(req, res) {
+    editURL(req.body).then((result) => {
+      res.json(result);
+    });
+  }
+  delete(req, res) {
+    deleteURL(req.body).then((result) => {
+      res.json(result);
+    });
+  }
+  get(req, res) {
+    getURL(req.body).then((result) => {
+      res.json(result);
+    });
   }
 }
 
 module.exports = {
+  Shortener,
   shortener,
   configURL,
   openURL,
   createURL,
   editURL,
-  deleteURL
+  deleteURL,
+  getURL,
+  configURLSync
 }
