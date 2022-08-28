@@ -8,7 +8,7 @@ The package itself does not need any external packages, you only need packages w
 - Simple design
 - Advanced error logging
 
-### Create a database
+## Create a database
 Create a JSON File with an empty object
 ```json
 {}
