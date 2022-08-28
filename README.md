@@ -1,4 +1,4 @@
-# URL-Shortener Package
+# URL Shortener Package
 A package you can use to create a URL Shortener with express
 
 ## Installation progress
