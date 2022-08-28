@@ -37,8 +37,21 @@ urlShortener.configURL({
   parameter: "id",
   logClicks: true // optional
 }).then((result) => {
+  if (result.err) return;
   console.log("Options were approved to the package");
 });
+```
+
+### Configuration Synchronously
+```js
+const result = urlShortener.configURLSync({
+  file: "./urls.json",
+  parameter: "id",
+  logClicks: true // optional
+});
+if (!result.err) {
+  console.log("Options were approved to the package");
+}
 ```
 
 ### Open URL
