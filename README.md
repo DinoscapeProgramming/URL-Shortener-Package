@@ -8,13 +8,13 @@ The package itself does not need any external packages, you only need packages w
 - Simple design
 - Advanced error logging
 
-## Documentation
 ### Create a database
 Create a JSON File with an empty object
 ```json
 {}
 ```
 
+## Documentation
 ### Setup
 ```js
 const express = require("express"); // this package is express server based
@@ -37,21 +37,8 @@ urlShortener.configURL({
   parameter: "id",
   logClicks: true // optional
 }).then((result) => {
-  if (result.err) return;
   console.log("Options were approved to the package");
 });
-```
-
-### Configuration Synchronously
-```js
-const result = urlShortener.configURLSync({
-  file: "./urls.json",
-  parameter: "id",
-  logClicks: true // optional
-});
-if (!result.err) {
-  console.log("Options were approved to the package");
-}
 ```
 
 ### Open URL
@@ -104,7 +91,7 @@ app.listen(3000, () => {
 });
 ```
 
-## Example
+### Example
 ```js
 const express = require('express');
 const app = express();
@@ -154,10 +141,207 @@ app.all("/api/v1/url/get", (req, res) => {
   });
 });
 
-const listen = app.listen(3000, () => {
-  console.log("Server is ready on port", listen.address().port);
+app.listen(3000, () => {
+  console.log("Server is ready");
 });
 ```
+
+## Class Documentation
+### Setup
+```js
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const urlShortener = require('express-shortener');
+const Shortener = new urlShortener.Shortener({
+  file: "./urls.json",
+  parameter: "id",
+  logClicks: true // optional
+});
+
+app.set('trust proxy', true); // required if you enabled "logClicks"
+app.use(bodyParser.json()); // required for post requests
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'Dinoscape');
+  next();
+});
+```
+
+### Open URL
+```js
+app.all("/url/:id", Shortener.open);
+```
+
+### Create URL
+```js
+app.all("/api/v1/url/create", Shortener.create);
+```
+
+### Edit URL
+```js
+app.all("/api/v1/url/edit", Shortener.edit);
+```
+
+### Delete URL
+```js
+app.all("/api/v1/url/delete", Shortener.delete);
+```
+
+### Get URL
+```js
+app.all("/api/v1/url/get", Shortener.get);
+```
+
+### Listen to Server
+```js
+app.listen(3000, () => {
+  console.log("Server is ready");
+});
+```
+
+### Example
+```js
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const urlShortener = require('express-shortener');
+const Shortener = new urlShortener.Shortener({
+  file: "./urls.json",
+  parameter: "id",
+  logClicks: true
+});
+
+app.set('trust proxy', true);
+app.use(bodyParser.json());
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'Dinoscape');
+  next();
+});
+
+app.all("/url/:id", Shortener.open);
+
+app.all("/api/v1/url/create", Shortener.create);
+
+app.all("/api/v1/url/edit", Shortener.edit);
+
+app.all("/api/v1/url/delete", Shortener.delete);
+
+app.all("/api/v1/url/get", Shortener.get);
+
+app.listen(3000, () => {
+  console.log("Server is ready");
+});
+```
+
+## Middleware Documentation
+### Setup
+```js
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const urlShortener = require('express-shortener');
+
+app.set('trust proxy', true);
+app.use(bodyParser.json());
+app.use(urlShortener.shortener({
+  file: "./urls.json",
+  parameter: "id",
+  logClicks: true
+}));
+
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'Dinoscape');
+  next();
+});
+```
+
+### Open URL
+```js
+app.all("/url/:id", (req, res) => {
+  res.openURL();
+});
+```
+
+### Create URL
+```js
+app.all("/api/v1/url/create", (req, res) => {
+  res.createURL();
+});
+```
+
+### Edit URL
+```js
+app.all("/api/v1/url/edit", (req, res) => {
+  res.editURL();
+});
+```
+
+### Delete URL
+```js
+app.all("/api/v1/url/delete", (req, res) => {
+  res.deleteURL();
+});
+```
+
+### Get URL
+```js
+app.all("/api/v1/url/get", (req, res) => {
+  res.getURL();
+});
+```
+
+### Listen to Server
+```js
+app.listen(3000, () => {
+  console.log("Server is ready");
+});
+```
+
+### Documentation
+```js
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const urlShortener = require('express-shortener');
+
+app.set('trust proxy', true);
+app.use(bodyParser.json());
+app.use(urlShortener.shortener({
+  file: "./urls.json",
+  parameter: "id",
+  logClicks: true
+}));
+
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'Dinoscape');
+  next();
+});
+
+app.all("/url/:id", (req, res) => {
+  res.openURL();
+});
+
+app.post('/api/v1/url/create', (req, res) => {
+  res.createURL();
+});
+
+app.post('/api/v1/url/edit', (req, res) => {
+  res.editURL();
+});
+
+app.post('/api/v1/url/delete', (req, res) => {
+  res.deleteURL();
+});
+
+app.post('/api/v1/url/get', (req, res) => {
+  res.getURL();
+});
+
+app.listen(3000, () => {
+  console.log("Server is ready");
+});
+```
+
 
 ## Error Handling
 ### Invalid options
@@ -206,4 +390,4 @@ The token item does not exist in the body
 The token is not valid
 
 ### Other Errors
-Other errors are from the node internal packages fs and crypto (mostly fs when you enter a not existing file or the content in the file is not an object)
+Other errors are from the node internal packages fs and crypto (mostly fs when you enter a not existing file)
