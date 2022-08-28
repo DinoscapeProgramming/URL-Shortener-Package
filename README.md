@@ -178,6 +178,9 @@ app.set('trust proxy', true);
 ### No parameter was given
 Your options do not contain a but you have executed the openURL function so the package does not know what id it should open
 
+### Invalid parameter
+The parameter does not exist in the request or is not defined
+
 ### Id does not exist
 The given id is not available in the database
 
